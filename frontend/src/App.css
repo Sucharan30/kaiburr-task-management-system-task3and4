@@ -1,0 +1,9 @@
+.app-root {
+  min-height: 100vh;
+}
+
+pre {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+}
