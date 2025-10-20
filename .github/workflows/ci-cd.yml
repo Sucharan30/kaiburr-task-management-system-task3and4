@@ -3,55 +3,22 @@ name: CI-CD Pipeline
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  build-and-dockerize:
+  smoke-test:
     runs-on: ubuntu-latest
-    env:
-      BACKEND_IMAGE: ${{ github.repository }}-backend
-      FRONTEND_IMAGE: ${{ github.repository }}-frontend
+    name: Smoke test (prints date, actor and repo)
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Build frontend
-        working-directory: ./frontend
+      - name: Print run info
         run: |
-          npm ci
-          npm run build
+          echo "Actor: ${{ github.actor }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Date (UTC): $(date -u)"
 
-      - name: Build backend (install prod deps)
-        working-directory: ./backend
-        run: |
-          npm ci --only=production
-
-      - name: Build Docker images
-        run: |
-          docker build -t ${{ env.BACKEND_IMAGE }}:latest ./backend
-          docker build -t ${{ env.FRONTEND_IMAGE }}:latest ./frontend
-
-      - name: Log in to Docker Hub (optional)
-        if: secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Push Docker images (optional)
-        if: secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN
-        run: |
-          docker tag ${{ env.BACKEND_IMAGE }}:latest ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest
-          docker tag ${{ env.FRONTEND_IMAGE }}:latest ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest
-
-      - name: Output images built
-        run: |
-          echo "Built images: ${{ env.BACKEND_IMAGE }}:latest and ${{ env.FRONTEND_IMAGE }}:latest"
+      - name: Mark success
+        run: echo "CI smoke test succeeded"
